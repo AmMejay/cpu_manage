@@ -1,350 +1,335 @@
-# Guia de Revisão: API RESTful Completa (CRUD) e Banco de Dados (`Nutri_DB`)
-
-Este guia prático e teórico consolida o desenvolvimento completo de uma **API RESTful Backend com CRUD total** (Create, Read, Update, Delete) em **Node.js**, **Express** e **MySQL**, com foco na arquitetura do projeto de gestão nutricional (`Nutri_DB`).
-
----
-
-## 📌 1. Visão Geral da Arquitetura Backend
-
-* **Processamento e Regras no Server-Side:** O cálculo do **IMC** e a definição do **Status Nutricional** ocorrem **exclusivamente no servidor (backend)**. O front-end envia apenas os dados brutos (`peso` e `altura`), prevenindo adulterações, falhas de segurança e corrupção de dados no banco.
-* **Segurança de Credenciais:** As chaves de acesso ao banco são mantidas no arquivo de variáveis de ambiente (`.env`), que permanece ignorado pelo versionamento Git (`.gitignore`).
-* **Tratamento de Exceções e Resiliência:** Todas as rotas utilizam blocos `try/catch` para garantir que falhas operacionais retornem mensagens e códigos HTTP adequados sem derrubar o servidor.
-* **Prevenção de SQL Injection:** Consultas no banco são executadas utilizando consultas parametrizadas (`?`), garantindo a sanitização dos dados.
-
----
-
-## 🗄️ 2. Estrutura do Banco de Dados (`Nutri_DB`)
-
-Tabela **`pacientes`**:
-
-| Campo | Tipo | Restrições | Descrição |
-| :--- | :--- | :--- | :--- |
-| `id` | `INT` | `PRIMARY KEY`, `AUTO_INCREMENT` | Identificador único do paciente |
-| `nome` | `VARCHAR(255)` | `NOT NULL` | Nome do paciente |
-| `idade` | `INT` | `NOT NULL` | Idade em anos |
-| `altura` | `DECIMAL(4,2)` | `NOT NULL` | Altura em metros (ex: `1.75`) |
-| `peso` | `DECIMAL(4,2)` | `NOT NULL` | Peso em quilogramas (ex: `70.50`) |
-| `imc` | `DECIMAL(4,2)` | `NOT NULL` | IMC calculado no backend |
-| `status` | `VARCHAR(100)` | `NOT NULL` | Classificação nutricional calculada |
-| `created_at` | `TIMESTAMP` | `DEFAULT CURRENT_TIMESTAMP` | Data e hora automática do registro |
-
----
-
-## 🛠️ 3. Instalação e Configuração
-
-```bash
-# 1. Inicializar o projeto Node.js
+Guia de Revisão: API RESTful Completa (CRUD) e Banco de Dados (banco.db)Este guia prático e teórico consolida o desenvolvimento completo de uma API RESTful Backend com CRUD total (Create, Read, Update, Delete) em Node.js, Express e SQLite (better-sqlite3), com foco na arquitetura do projeto de gestão de medições de temperatura.📌 1. Visão Geral da Arquitetura BackendProcessamento e Regras no Server-Side: Os cálculos de conversão de temperatura e a definição do Status ocorrem exclusivamente no servidor (backend) através do módulo classeTemp. O front-end envia apenas os dados brutos (valor_original e unidade_original), prevenindo adulterações e inconsistências.Armazenamento Local com SQLite: O projeto utiliza o better-sqlite3, permitindo consultas síncronas/assíncronas performáticas diretamente em um arquivo local (banco.db).Tratamento de Exceções e Resiliência: Todas as rotas utilizam blocos try/catch para garantir que falhas operacionais retornem mensagens e códigos HTTP adequados sem derrubar a aplicação.Prevenção de SQL Injection: Consultas no banco são executadas utilizando consultas parametrizadas (?), garantindo a segurança e sanitização dos dados informados.🗄️ 2. Estrutura do Banco de Dados (banco.db)Tabela medicoes:CampoTipoRestriçõesDescriçãoidINTEGERPRIMARY KEY, AUTOINCREMENTIdentificador único da mediçãodescricaoTEXTNOT NULLDescrição do local ou equipamentotipoTEXTNOT NULLTipo da mediçãovalor_originalREALNOT NULLValor original informadounidade_originalTEXTNOT NULLUnidade de medida original (ex: C)valor_convertidoREALNOT NULLValor convertido calculado no backendunidade_convertidaTEXTNOT NULLUnidade convertida (ex: F)statusTEXTNOT NULLClassificação calculada automaticamente🛠️ 3. Instalação e ConfiguraçãoBash# 1. Inicializar o projeto Node.js
 npm init -y
 
-# 2. Instalar dependências de produção
-npm install express mysql2 dotenv
+# 2. Instalar dependências necessárias
+npm install express better-sqlite3
+Estrutura de Arquivos Recomendada:index.js — Arquivo principal contendo as rotas da API e o servidor Express.classe.js — Módulo responsável pela regra de negócio (cálculo de temperatura e status).db.js — Conexão com o banco de dados SQLite.public/index.html — Página inicial estática documentando as rotas da API.public/style.css — Estilização da página inicial.💻 4. Código Completo da API com CRUDMódulo de Regra de Negócio (classe.js)JavaScript// Função para calcular a conversão de temperatura e status
+function classeTemp(valor_original, unidade_original) {
+    const valor_convertido = (valor_original * 9 / 5) + 32;
+    let unidade_convertida = "";
 
-# 3. Instalar dependência de desenvolvimento (Nodemon)
-npm install -D nodemon
-```
+    if (unidade_original === "C") {
+        unidade_convertida = "F";
+    }
 
-### Arquivo `package.json` (Scripts):
-```json
-"scripts": {
-  "dev": "nodemon index.js"
+    let status = "";
+    if (valor_original < 80) {
+        status = "Temperatura Ideal";
+    } else if (valor_original >= 80 && valor_original <= 105) {
+        status = "Acima da temperatura ideal";
+    } else if (valor_original > 105) {
+        status = "Limite crítico";
+    } else {
+        status = "Erro ao calcular a classificação valor informado invalido.";
+    }
+    return { valor_convertido, unidade_convertida, status };
 }
-```
 
-### Arquivo `.gitignore`:
-```text
-node_modules/
-.env
-```
+module.exports = classeTemp;
+Conexão com o Banco (db.js)JavaScriptconst Database = require("better-sqlite3");
+const db = new Database("banco.db", { verbose: console.log });
 
-### Arquivo `.env`:
-```env
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=Nutri_DB
-```
+module.exports = db;
+Servidor Principal (index.js)JavaScriptconst path = require("path");
+const express = require("express");
+const db = require("./db");
+const classeTemp = require("./classe.js");
 
-### Conexão com Banco (`db.js`):
-```javascript
-const mysql = require('mysql2/promise');
-require('dotenv').config();
-
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
-
-module.exports = pool;
-```
-
----
-
-## 💻 4. Código Completo da API com CRUD (`index.js`)
-
-```javascript
-const express = require('express');
-const db = require('./db');
 const app = express();
 const port = 3000;
 
-// Middleware para interpretar requisições em formato JSON
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 
-/**
- * Função utilitária para calcular IMC e determinar o Status Nutricional no Server-Side
- */
-function calcularIMC(peso, altura) {
-  const numPeso = parseFloat(peso);
-  const numAltura = parseFloat(altura);
-
-  const imcCalculado = numPeso / (numAltura * numAltura);
-  const imc = parseFloat(imcCalculado.toFixed(2));
-
-  let status = "Peso normal";
-  if (imc < 18.5) {
-    status = "Abaixo do peso";
-  } else if (imc >= 18.5 && imc <= 24.9) {
-    status = "Peso normal";
-  } else if (imc >= 25.0 && imc <= 29.9) {
-    status = "Sobrepeso";
-  } else {
-    status = "Obesidade";
-  }
-
-  return { imc, status };
-}
-
-// -----------------------------------------------------------------------------
-// 1. READ ALL (GET /paciente) - Listar todos os pacientes
-// -----------------------------------------------------------------------------
-app.get('/paciente', async (req, res) => {
-  try {
-    const [rows] = await db.execute('SELECT * FROM pacientes');
-    res.status(200).json(rows);
-  } catch (error) {
-    res.status(500).json({ mensagem: "Erro interno do servidor", detalhes: error.message });
-  }
+// Rota para a página inicial
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // -----------------------------------------------------------------------------
-// 2. READ FILTERED (GET /paciente/obesidade) - Listar apenas pacientes com obesidade
+// 1. CREATE (POST /medicao) - Cadastrar nova medição com cálculo automático
 // -----------------------------------------------------------------------------
-app.get('/paciente/obesidade', async (req, res) => {
-  try {
-    const [rows] = await db.execute('SELECT * FROM pacientes WHERE status = "Obesidade"');
-    res.status(200).json(rows);
-  } catch (error) {
-    res.status(500).json({ mensagem: "Erro interno do servidor", detalhes: error.message });
-  }
-});
-
-// -----------------------------------------------------------------------------
-// 3. READ ONE (GET /paciente/:id) - Buscar paciente específico por ID
-// -----------------------------------------------------------------------------
-app.get('/paciente/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const [rows] = await db.execute('SELECT * FROM pacientes WHERE id = ?', [id]);
-    if (rows.length === 0) {
-      return res.status(404).json({ mensagem: "Paciente não encontrado" });
-    }
-    res.status(200).json(rows[0]);
-  } catch (error) {
-    res.status(500).json({ mensagem: "Erro interno do servidor", detalhes: error.message });
-  }
-});
-
-// -----------------------------------------------------------------------------
-// 4. CREATE (POST /paciente) - Cadastrar novo paciente com cálculo automático de IMC
-// -----------------------------------------------------------------------------
-app.post('/paciente', async (req, res) => {
-  const { nome, idade, altura, peso } = req.body;
-
-  // Validação dos dados recebidos
-  if (!nome || !idade || !altura || !peso) {
-    return res.status(400).json({ mensagem: "Verifique se todos os campos estão preenchidos" });
+app.post("/medicao", async (req, res) => {
+  const { descricao, tipo, valor_original, unidade_original } = req.body;
+  
+  if (!descricao || !tipo || !valor_original || !unidade_original) {
+    return res.status(400).json({
+      mensagem: "Verifique se todos os campos estão preenchidos",
+    });
   }
 
-  // Processamento das regras de negócio no servidor
-  const { imc, status } = calcularIMC(peso, altura);
+  const { valor_convertido, unidade_convertida, status } = classeTemp(
+    Number(valor_original),
+    String(unidade_original),
+  );
 
   try {
-    const query = `
-      INSERT INTO pacientes (nome, idade, altura, peso, imc, status) 
-      VALUES (?, ?, ?, ?, ?, ?)
-    `;
-    const [result] = await db.execute(query, [nome, idade, altura, peso, imc, status]);
+    const result = db
+      .prepare(
+        "INSERT INTO medicoes (descricao, tipo, valor_original, unidade_original, valor_convertido, unidade_convertida, status) VALUES (?,?,?,?,?,?,?);"
+      )
+      .run([
+        descricao,
+        tipo,
+        valor_original,
+        unidade_original,
+        valor_convertido,
+        unidade_convertida,
+        status,
+      ]);
 
     res.status(201).json({
-      id: result.insertId,
-      nome,
-      idade: Number(idade),
-      altura: Number(altura),
-      peso: Number(peso),
-      imc,
-      status
+      message: "Medição cadastrada com sucesso",
+      id: result.lastInsertRowid,
+      descricao,
+      tipo,
+      valor_original,
+      unidade_original,
+      valor_convertido,
+      unidade_convertida,
+      status,
     });
   } catch (error) {
-    res.status(500).json({ mensagem: "Erro interno do servidor", detalhes: error.message });
+    console.error("Erro ao cadastrar medição:", error);
+    res.status(500).json({
+      mensagem: "Erro Interno do Servidor",
+    });
   }
 });
 
 // -----------------------------------------------------------------------------
-// 5. UPDATE (PUT /paciente/:id) - Atualizar dados do paciente e recalcular IMC
+// 2. READ ALL (GET /medicao) - Listar todas as medições
 // -----------------------------------------------------------------------------
-app.put('/paciente/:id', async (req, res) => {
-  const { id } = req.params;
-  const { nome, idade, altura, peso } = req.body;
+app.get("/medicao", async (req, res) => {
+  try {
+    const rows = db.prepare("SELECT * FROM medicoes").all();
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error("Erro ao buscar medições:", error);
+    res.status(500).json({
+      mensagem: "Erro Interno do Servidor",
+    });
+  }
+});
 
-  // Validação dos campos obrigatórios
-  if (!nome || !idade || !altura || !peso) {
-    return res.status(400).json({ mensagem: "Verifique se todos os campos estão preenchidos" });
+// -----------------------------------------------------------------------------
+// 3. READ FILTERED (GET /medicao/temperatura_ideal) - Filtrar por status específico
+// -----------------------------------------------------------------------------
+app.get("/medicao/temperatura_ideal", async (req, res) => {
+  try {
+    const medicoes = db
+      .prepare("SELECT * FROM medicoes WHERE status = 'Temperatura Ideal'")
+      .all();
+      
+    if (medicoes.length === 0) {
+      return res.status(404).json({
+        mensagem: "Nenhuma medição de temperatura ideal encontrada",
+      });
+    }
+    res.status(200).json(medicoes);
+  } catch (error) {
+    console.error("Erro ao buscar medições de temperatura ideal:", error);
+    res.status(500).json({
+      mensagem: "Erro Interno do Servidor",
+    });
+  }
+});
+
+// -----------------------------------------------------------------------------
+// 4. READ ONE (GET /medicao/:id) - Buscar medição específica por ID
+// -----------------------------------------------------------------------------
+app.get("/medicao/:id", async (req, res) => {
+  try {
+    const medicao = db
+      .prepare("SELECT * FROM medicoes WHERE id = ?")
+      .get(req.params.id);
+      
+    if (medicao === undefined) {
+      return res.status(404).json({
+        mensagem: "Medição não encontrada",
+      });
+    }
+    res.status(200).json(medicao);
+  } catch (error) {
+    console.error("Erro ao buscar medição:", error);
+    res.status(500).json({
+      mensagem: "Erro Interno do Servidor",
+    });
+  }
+});
+
+// -----------------------------------------------------------------------------
+// 5. UPDATE (PUT /medicao/:id) - Atualizar medição e recalcular conversões
+// -----------------------------------------------------------------------------
+app.put("/medicao/:id", async (req, res) => {
+  const { descricao, tipo, valor_original, unidade_original } = req.body;
+  
+  if (!descricao || !tipo || !valor_original || !unidade_original) {
+    return res.status(400).json({
+      mensagem: "Verifique se todos os campos estão preenchidos",
+    });
   }
 
-  // Recálculo obrigatório do IMC e status com base nos novos valores
-  const { imc, status } = calcularIMC(peso, altura);
+  const { valor_convertido, unidade_convertida, status } = classeTemp(
+    Number(valor_original),
+    String(unidade_original),
+  );
 
   try {
-    const query = `
-      UPDATE pacientes 
-      SET nome = ?, idade = ?, altura = ?, peso = ?, imc = ?, status = ? 
-      WHERE id = ?
-    `;
-    const [result] = await db.execute(query, [nome, idade, altura, peso, imc, status, id]);
+    const newMedicao = db
+      .prepare(
+        "UPDATE medicoes SET descricao = ?, tipo = ?, valor_original = ?, unidade_original = ?, valor_convertido = ?, unidade_convertida = ?, status = ? WHERE id = ?;"
+      )
+      .run([
+        descricao,
+        tipo,
+        valor_original,
+        unidade_original,
+        valor_convertido,
+        unidade_convertida,
+        status,
+        req.params.id,
+      ]);
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ mensagem: "Paciente não encontrado para atualização" });
+    if (newMedicao.changes === 0) {
+      return res.status(404).json({
+        mensagem: "Medição não encontrada",
+      });
     }
 
     res.status(200).json({
-      id: Number(id),
-      nome,
-      idade: Number(idade),
-      altura: Number(altura),
-      peso: Number(peso),
-      imc,
-      status
+      mensagem: "Medição atualizada com sucesso.",
     });
   } catch (error) {
-    res.status(500).json({ mensagem: "Erro interno do servidor", detalhes: error.message });
+    console.error("Erro ao atualizar medição:", error);
+    res.status(500).json({
+      mensagem: "Erro Interno do Servidor",
+    });
   }
 });
 
 // -----------------------------------------------------------------------------
-// 6. DELETE (DELETE /paciente/:id) - Remover paciente do banco
+// 6. DELETE (DELETE /medicao/:id) - Remover medição do banco
 // -----------------------------------------------------------------------------
-app.delete('/paciente/:id', async (req, res) => {
-  const { id } = req.params;
+app.delete("/medicao/:id", async (req, res) => {
   try {
-    const [result] = await db.execute('DELETE FROM pacientes WHERE id = ?', [id]);
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ mensagem: "Paciente não encontrado" });
+    const medicao = db
+      .prepare("DELETE FROM medicoes WHERE id = ?")
+      .run(req.params.id);
+
+    if (medicao.changes === 0) {
+      return res.status(404).json({
+        mensagem: "Medição não encontrada",
+      });
     }
-    res.status(200).json({ mensagem: "Paciente apagado com sucesso" });
+    res.status(200).json({ mensagem: "Medição apagada com sucesso" });
   } catch (error) {
-    res.status(500).json({ mensagem: "Erro interno do servidor", detalhes: error.message });
+    console.error("Erro ao apagar medição:", error);
+    res.status(500).json({
+      mensagem: "Erro Interno do Servidor",
+    });
   }
 });
 
 app.listen(port, () => {
-  console.log(`Servidor rodando com sucesso em http://localhost:${port}`);
+  console.log(`Example app listening on port ${port}`);
 });
-```
+🧪 5. Guia de Testes do CRUD no Insomnia / Postman1️⃣ POST /medicao (Criar Medição)Método: POSTURL: http://localhost:3000/medicaoHeader: Content-Type: application/jsonBody (JSON):JSON{
+  "descricao": "Sensor Caldeira 01",
+  "tipo": "Temperatura",
+  "valor_original": 75,
+  "unidade_original": "C"
+}
+Resposta Esperada (201 Created):JSON{
+  "message": "Medição cadastrada com sucesso",
+  "id": 1,
+  "descricao": "Sensor Caldeira 01",
+  "tipo": "Temperatura",
+  "valor_original": 75,
+  "unidade_original": "C",
+  "valor_convertido": 167,
+  "unidade_convertida": "F",
+  "status": "Temperatura Ideal"
+}
+2️⃣ GET /medicao (Listar Todas)Método: GETURL: http://localhost:3000/medicaoResposta Esperada (200 OK): Array JSON contendo todas as medições cadastradas.3️⃣ GET /medicao/1 (Buscar por ID)Método: GETURL: http://localhost:3000/medicao/1Resposta Esperada (200 OK): Objeto JSON da medição consultada.Se não existir (404 Not Found): {"mensagem": "Medição não encontrada"}4️⃣ PUT /medicao/1 (Atualizar Medição)Método: PUTURL: http://localhost:3000/medicao/1Header: Content-Type: application/jsonBody (JSON):JSON{
+  "descricao": "Sensor Caldeira 01 - Atualizado",
+  "tipo": "Temperatura",
+  "valor_original": 90,
+  "unidade_original": "C"
+}
+Resposta Esperada (200 OK): {"mensagem": "Medição atualizada com sucesso."} com recálculo automático no backend.5️⃣ DELETE /medicao/1 (Remover Medição)Método: DELETEURL: http://localhost:3000/medicao/1Resposta Esperada (200 OK): {"mensagem": "Medição apagada com sucesso"}📊 6. Tabela Mapeada de Status HTTPCódigo StatusCategoriaQuando é Utilizado na API200 OKSucessoRetorno bem-sucedido de consultas (GET), atualizações (PUT) ou exclusões (DELETE).201 CreatedSucessoCriação confirmada de um novo registro no banco via POST.400 Bad RequestErro do ClienteRequisição com dados incompletos ou em formato inválido (ex: ausência de campos obrigatórios).404 Not FoundErro do ClienteRegistro solicitado não localizado no banco (ex: ID inexistente ou lista vazia).500 Internal ErrorErro do ServidorErros inesperados de banco de dados ou execução capturados pelo bloco catch.💡 Pontos-Chave para Revisão e ProvasPor que o cálculo e conversão são feitos no servidor (classeTemp)? Para garantir a integridade dos dados, mantendo a regra de negócio centralizada e protegida contra alterações indevidas no cliente.Qual a função do result.lastInsertRowid? Captura o ID gerado automaticamente pelo SQLite após um comando INSERT.Qual a função da propriedade changes? No better-sqlite3, indica a quantidade de linhas afetadas por operações de UPDATE ou DELETE. Se for 0, sinaliza que o registro correspondente não foi encontrado.🌐 7. Documentação Front-End (public/index.html)A aplicação também conta com uma interface visual estática acessível pela rota raiz (/), que apresenta de forma organizada todas as rotas e métodos HTTP disponíveis na API.HTML<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API de Medições</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>API de Medições</h1>
+      <p>API REST para cadastro, consulta, atualização e exclusão de medições de temperatura.</p>
+    </header>
 
----
+    <section>
+      <h2>Rotas disponíveis</h2>
+      <div class="routes">
+        <article class="route">
+          <span class="method get">GET</span>
+          <div class="details">
+            <code>/</code>
+            <p>Página inicial da API.</p>
+          </div>
+        </article>
+        <article class="route">
+          <span class="method post">POST</span>
+          <div class="details">
+            <code>/medicao</code>
+            <p>Cadastra uma nova medição.</p>
+          </div>
+        </article>
+        <article class="route">
+          <span class="method get">GET</span>
+          <div class="details">
+            <code>/medicao</code>
+            <p>Lista todas as medições.</p>
+          </div>
+        </article>
+        <article class="route">
+          <span class="method get">GET</span>
+          <div class="details">
+            <code>/medicao/temperatura_ideal</code>
+            <p>Lista medições com temperatura ideal.</p>
+          </div>
+        </article>
+        <article class="route">
+          <span class="method get">GET</span>
+          <div class="details">
+            <code>/medicao/:id</code>
+            <p>Busca uma medição pelo ID.</p>
+          </div>
+        </article>
+        <article class="route">
+          <span class="method put">PUT</span>
+          <div class="details">
+            <code>/medicao/:id</code>
+            <p>Atualiza uma medição existente.</p>
+          </div>
+        </article>
+        <article class="route">
+          <span class="method delete">DELETE</span>
+          <div class="details">
+            <code>/medicao/:id</code>
+            <p>Exclui uma medição existente.</p>
+          </div>
+        </article>
+      </div>
+    </section>
 
-## 🧪 5. Guia de Testes do CRUD no Insomnia / Postman
-
-### 1️⃣ **POST /paciente (Criar Paciente)**
-* **Método:** `POST`
-* **URL:** `http://localhost:3000/paciente`
-* **Header:** `Content-Type: application/json`
-* **Body (JSON):**
-  ```json
-  {
-    "nome": "Jason Carvalho",
-    "idade": 28,
-    "altura": 1.75,
-    "peso": 82.5
-  }
-  ```
-* **Resposta Esperada (201 Created):**
-  ```json
-  {
-    "id": 1,
-    "nome": "Jason Carvalho",
-    "idade": 28,
-    "altura": 1.75,
-    "peso": 82.5,
-    "imc": 26.94,
-    "status": "Sobrepeso"
-  }
-  ```
-
----
-
-### 2️⃣ **GET /paciente (Listar Todos)**
-* **Método:** `GET`
-* **URL:** `http://localhost:3000/paciente`
-* **Resposta Esperada (200 OK):** Array JSON contendo todos os registros de pacientes.
-
----
-
-### 3️⃣ **GET /paciente/1 (Buscar por ID)**
-* **Método:** `GET`
-* **URL:** `http://localhost:3000/paciente/1`
-* **Resposta Esperada (200 OK):** Objeto JSON do paciente consultado.
-* **Se não existir (404 Not Found):** `{"mensagem": "Paciente não encontrado"}`
-
----
-
-### 4️⃣ **PUT /paciente/1 (Atualizar Paciente)**
-* **Método:** `PUT`
-* **URL:** `http://localhost:3000/paciente/1`
-* **Header:** `Content-Type: application/json`
-* **Body (JSON):**
-  ```json
-  {
-    "nome": "Jason Carvalho",
-    "idade": 28,
-    "altura": 1.75,
-    "peso": 72.0
-  }
-  ```
-* **Resposta Esperada (200 OK):** Registro alterado com recálculo automático no backend (`imc: 23.51`, `status: "Peso normal"`).
-
----
-
-### 5️⃣ **DELETE /paciente/1 (Remover Paciente)**
-* **Método:** `DELETE`
-* **URL:** `http://localhost:3000/paciente/1`
-* **Resposta Esperada (200 OK):**
-  ```json
-  {
-    "mensagem": "Paciente apagado com sucesso"
-  }
-  ```
-
----
-
-## 📊 6. Tabela Mapeada de Status HTTP
-
-| Código Status | Categoria | Quando é Utilizado na API |
-| :--- | :--- | :--- |
-| **200 OK** | Sucesso | Retorno bem-sucedido de consultas (`GET`), atualizações (`PUT`) ou exclusões (`DELETE`). |
-| **201 Created** | Sucesso | Criação confirmada de um novo registro no banco via `POST`. |
-| **400 Bad Request** | Erro do Cliente | Requisição com dados incompletos ou em formato inválido (ex: ausência do campo `nome`). |
-| **404 Not Found** | Erro do Cliente | Registro solicitado não localizado no banco (ex: ID inexistente). |
-| **500 Internal Error** | Erro do Servidor | Erros inesperados de banco de dados ou execução capturados pelo bloco `catch`. |
-
----
-
-## 💡 Pontos-Chave para Revisão e Provas
-1. **Por que `imc` e `status` não são enviados pelo cliente?** Para garantir a integridade dos dados e impedir alterações maliciosas no resultado dos cálculos.
-2. **Qual a função do `result.insertId`?** Captura o ID gerado automaticamente pelo campo `AUTO_INCREMENT` do MySQL após um `INSERT`.
-3. **Qual a função do `result.affectedRows`?** Indica a quantidade de linhas afetadas pela operação (`UPDATE` ou `DELETE`). Se for `0`, significa que o `id` não foi encontrado.
+    <footer>
+      API desenvolvida com Node.js, Express e better-sqlite3.
+    </footer>
+  </main>
+</body>
+</html>
