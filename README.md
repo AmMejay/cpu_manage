@@ -36,5 +36,11 @@ Tabela **`medicoes`**:
 # 1. Inicializar o projeto Node.js
 npm init -y
 
-# 2. Instalar dependências necessárias
+# 2. Instalar node_modules
+npm i
+
+# 3. Instalar dependências necessárias
 npm install express better-sqlite3
+
+# 4. Inicializar o servidor
+npm run dev
