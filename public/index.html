@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>API de Medições</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>API de Medições</h1>
+      <p>
+        API REST para cadastro, consulta, atualização e exclusão
+        de medições de temperatura.
+      </p>
+    </header>
+
+    <section>
+      <h2>Rotas disponíveis</h2>
+
+      <div class="routes">
+        <article class="route">
+          <span class="method get">GET</span>
+          <div class="details">
+            <code>/</code>
+            <p>Página inicial da API.</p>
+          </div>
+        </article>
+
+        <article class="route">
+          <span class="method post">POST</span>
+          <div class="details">
+            <code>/medicao</code>
+            <p>Cadastra uma nova medição.</p>
+          </div>
+        </article>
+
+        <article class="route">
+          <span class="method get">GET</span>
+          <div class="details">
+            <code>/medicao</code>
+            <p>Lista todas as medições.</p>
+          </div>
+        </article>
+
+        <article class="route">
+          <span class="method get">GET</span>
+          <div class="details">
+            <code>/medicao/temperatura_ideal</code>
+            <p>Lista medições com temperatura ideal.</p>
+          </div>
+        </article>
+
+        <article class="route">
+          <span class="method get">GET</span>
+          <div class="details">
+            <code>/medicao/:id</code>
+            <p>Busca uma medição pelo ID.</p>
+          </div>
+        </article>
+
+        <article class="route">
+          <span class="method put">PUT</span>
+          <div class="details">
+            <code>/medicao/:id</code>
+            <p>Atualiza uma medição existente.</p>
+          </div>
+        </article>
+
+        <article class="route">
+          <span class="method delete">DELETE</span>
+          <div class="details">
+            <code>/medicao/:id</code>
+            <p>Exclui uma medição existente.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <footer>
+      API desenvolvida com Node.js, Express e better-sqlite3.
+    </footer>
+  </main>
+</body>
+</html>

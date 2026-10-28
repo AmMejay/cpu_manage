@@ -1,0 +1,118 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+    padding: 40px 20px;
+}
+
+main {
+    max-width: 850px;
+    margin: 0 auto;
+}
+
+header {
+    margin-bottom: 30px;
+}
+
+h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+header p {
+    color: #64748b;
+    line-height: 1.6;
+}
+
+h2 {
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.routes {
+    display: grid;
+    gap: 12px;
+}
+
+.route {
+    background: white;
+    padding: 18px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.method {
+    min-width: 85px;
+    text-align: center;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.get {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.post {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.put {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.delete {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.details {
+    min-width: 0;
+}
+
+.details code {
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+}
+
+.details p {
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+footer {
+    margin-top: 25px;
+    color: #64748b;
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+@media (max-width: 480px) {
+    body {
+    padding: 25px 12px;
+    }
+
+    .route {
+    gap: 10px;
+    padding: 14px 10px;
+    }
+
+    .method {
+    min-width: 70px;
+    }
+}
